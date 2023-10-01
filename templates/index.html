@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Presenter Notes</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    <style>
+        body {
+            background-color: #263238;
+            border: 0px;
+            margin: 0px;
+            padding: 0px;
+        }
+
+        #notes {
+            line-height: 200%;
+            color: #ffffff;
+            font-family: 'Roboto', Arial, sans-serif;
+            font-weight: 100;
+            text-align:  justify;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .highlighted {
+            color: #ffcb6b;
+            font-weight: 900;
+        }
+    </style>
+</head>
+<body>
+    <div id="notes"></div>
+
+    <script type="text/javascript">
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        div = document.getElementById('notes')
+
+        socket.on('new_notes', function(data) {
+            notes = data.notes.replace(/\n/g, '<br />');
+            notes = highlightFirstHalf(notes);
+            
+            div.innerHTML = notes;
+            setMaxFontSize(div);
+        });
+
+        window.addEventListener('resize', throttle(function() {
+          setMaxFontSize(div);
+        }, 100));
+
+        document.addEventListener("click", toggleFullScreen);
+        document.addEventListener("touchstart", toggleFullScreen);
+
+        function highlightFirstHalf(htmlString) {
+            const parser = new DOMParser();
+
+            const doc = parser.parseFromString(htmlString, 'text/html');
+
+            const textNodes = [];
+            function collectTextNodes(node) {
+                if (node.nodeType === 3) { // Text node
+                    textNodes.push(node);
+                } else {
+                    node.childNodes.forEach(collectTextNodes);
+                }
+            }
+            collectTextNodes(doc.body);
+
+            textNodes.forEach(node => {
+                const words = node.nodeValue.split(' ').map(word => {
+                const len = word.length;
+                const half = Math.floor(len / 2);
+                const firstHalf = word.substring(0, half);
+                const secondHalf = word.substring(half);
+                return `<span class="highlighted">${firstHalf}</span>${secondHalf}`;
+                }).join(' ');
+
+                const newHtml = document.createRange().createContextualFragment(words);
+                node.replaceWith(newHtml);
+            });
+
+            return doc.body.innerHTML;
+        }
+
+        function setMaxFontSize(div) {
+            div.style.fontSize = '1pt';
+
+            let maxFontSize = 200;
+            for (let fs = 1; fs <= maxFontSize; fs=fs+0.1) {
+                div.style.fontSize = fs + "pt";
+
+                if ((document.body.scrollHeight > window.innerHeight) || 
+                    (document.body.scrollWidth > window.innerWidth)) {
+                    div.style.fontSize = (fs - 0.1) + "pt";
+                    break;
+                }
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function throttle(func, wait) {
+            var timeout;
+            return function() {
+                var context = this, args = arguments;
+                if (!timeout) {
+                    timeout = setTimeout(function() {
+                        timeout = null;
+                        func.apply(context, args);
+                    }, wait);
+                }
+            };
+        }
+    </script>
+</body>
+</html>
