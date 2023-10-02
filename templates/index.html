@@ -5,6 +5,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='NoSleep.min.js') }}"></script>
+    <link href="{{ url_for('static', filename='toastr.min.css') }}" rel="stylesheet"/>
+    <script src="{{ url_for('static', filename='toastr.min.js') }}"></script>
+
     <style>
         body {
             background-color: #263238;
@@ -26,12 +30,61 @@
             color: #ffcb6b;
             font-weight: 900;
         }
+
+        /* The snackbar - position it at the bottom and in the middle of the screen */
+        #message {
+            visibility: hidden; /* Hidden by default. Visible on click */
+            min-width: 500px; /* Set a default minimum width */
+            margin-left: -250px; /* Divide value of min-width by 2 */
+            background-color: #333; /* Black background color */
+            color: #fff; /* White text color */
+            font-size: 50px;
+            text-align: center; /* Centered text */
+            border-radius: 2px; /* Rounded borders */
+            padding: 16px; /* Padding */
+            position: fixed; /* Sit on top of the screen */
+            z-index: 1; /* Add a z-index if needed */
+            left: 50%; /* Center the snackbar */
+            bottom: 30px; /* 30px from the bottom */
+        }
+
+        /* Show the snackbar when clicking on a button (class added with JavaScript) */
+        #message.show {
+            visibility: visible; /* Show the snackbar */
+            /* Add animation: Take 0.5 seconds to fade in and out the snackbar. 
+            However, delay the fade out process for 2.5 seconds */
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        /* Animations to fade the snackbar in and out */
+        @-webkit-keyframes fadein {
+            from {bottom: 0; opacity: 0;} 
+            to {bottom: 30px; opacity: 1;}
+        }
+
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+
+        @-webkit-keyframes fadeout {
+            from {bottom: 30px; opacity: 1;} 
+            to {bottom: 0; opacity: 0;}
+        }
+
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
     </style>
 </head>
 <body>
     <div id="notes"></div>
+    <div id="message">Some text some message..</div>
 
     <script type="text/javascript">
+        var noSleep = new NoSleep();
         var socket = io.connect('http://' + document.domain + ':' + location.port);
         div = document.getElementById('notes')
 
@@ -47,9 +100,11 @@
           setMaxFontSize(div);
         }, 100));
 
+        
         document.addEventListener("click", toggleFullScreen);
-        document.addEventListener("touchstart", toggleFullScreen);
-
+        // document.addEventListener("touchstart", toggleFullScreen);
+        
+        
         function highlightFirstHalf(htmlString) {
             const parser = new DOMParser();
 
@@ -97,10 +152,20 @@
         }
 
         function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
+            if (noSleep.enabled === false) {
+                noSleep.enable();
+                showMessage('Device will not sleep.');
             } else {
-                document.exitFullscreen();
+                noSleep.disable();
+                showMessage('Device will sleep.');
+            }
+
+            if (document.documentElement.requestFullscreen && document.exitFullscreen) {
+                if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
             }
         }
 
@@ -115,6 +180,13 @@
                     }, wait);
                 }
             };
+        }
+
+        function showMessage(text) {
+            var msg = document.getElementById("message");
+            msg.className = "show";
+            msg.innerHTML = text;
+            setTimeout(function(){ msg.className = msg.className.replace("show", ""); }, 3000);
         }
     </script>
 </body>

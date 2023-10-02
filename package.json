@@ -1,0 +1,15 @@
+{
+  "name": "pnoter",
+  "version": "1.0.0",
+  "description": "A Python script seamlessly integrates with Apple Keynote to continuously capture the presenter notes from your current slide. It renders a user-friendly display of the notes, making them accessible from any browser (optimized for mobile).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "nosleep.js": "^0.12.0",
+  }
+}
